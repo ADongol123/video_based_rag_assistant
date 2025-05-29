@@ -3,6 +3,10 @@ import math
 import cloudinary.uploader
 import os
 import numpy as np
+from typing import List
+import io
+from utils.cloudinary_uploader import upload_image_bytes_to_cloudinary
+
 
 def extract_and_upload_frames_in_memory(video_path: str, segment_seconds=5, resize_width=640):
     """
@@ -77,3 +81,34 @@ def extract_and_upload_frames_in_memory(video_path: str, segment_seconds=5, resi
     cap.release()
 
     return segments
+
+
+
+
+
+def extract_frames_and_upload(video_path: str, start_sec: int, end_sec: int, interval_sec: int) -> List[str]:
+    cap = cv2.VideoCapture(video_path)
+    image_urls = []
+
+    for sec in range(start_sec, end_sec, interval_sec):
+        cap.set(cv2.CAP_PROP_POS_MSEC, sec * 1000)
+        success, frame = cap.read()
+        if not success:
+            break
+
+        success, encoded_image = cv2.imencode('.jpg', frame)
+        if not success:
+            continue
+
+        image_bytes = encoded_image.tobytes()
+        public_id = f"frame_{sec}s"
+
+        try:
+            url = upload_image_bytes_to_cloudinary(image_bytes, public_id=public_id, folder="youtube_frames")
+            if url:
+                image_urls.append(url)
+        except Exception as e:
+            print(f"Failed to upload frame at {sec}s: {e}")
+
+    cap.release()
+    return image_urls

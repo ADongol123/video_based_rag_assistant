@@ -11,4 +11,4 @@ if not MONGO_URI:
 
 client = MongoClient(MONGO_URI)
 db = client['youtube_rag']
-transcripts_collection = db['transcripts']
+transcripts_collection = db['parsed_data']
