@@ -65,3 +65,5 @@ export async function POST(req: Request) {
     return Response.json({ error: "Failed to analyze video" }, { status: 500 })
   }
 }
+
+
