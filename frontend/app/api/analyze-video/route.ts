@@ -2,7 +2,7 @@ export async function POST(req: Request) {
   try {
     const { url } = await req.json()
 
-    if (!url) {
+    if (!url) { 
       return Response.json({ error: "Video URL is required" }, { status: 400 })
     }
 

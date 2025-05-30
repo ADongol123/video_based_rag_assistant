@@ -36,7 +36,7 @@ def process_video(youtube_url: str):
 
     transcript = video_doc.get("transcript", [])
 
-    image_segments = []  # Will hold dicts like {start, end, images}
+    image_segments = []  
 
     for segment in transcript:
         start_sec = segment.get("start", 0)

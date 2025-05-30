@@ -25,7 +25,7 @@ class LlavaModel:
         self.model = LlavaForConditionalGeneration.from_pretrained(
             "llava-hf/llava-1.5-7b-hf",
             quantization_config=quant_config,
-            device_map="auto"  # Automatically maps layers across GPU/CPU if needed
+            device_map="auto"  
         )
 
     def answer_from_images(self, image_paths, question):

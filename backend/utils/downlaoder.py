@@ -10,7 +10,7 @@ def download_audio_webm(youtube_url: str, output_path="downloads/audio.webm") ->
         'outtmpl': output_path,
         'quiet': True,
         'no_warnings': True,
-        'postprocessors': []  # no conversion, keep original format (likely webm or m4a)
+        'postprocessors': [] 
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([youtube_url])

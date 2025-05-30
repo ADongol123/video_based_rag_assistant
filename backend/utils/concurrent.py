@@ -8,10 +8,9 @@ def blocking_transcribe(audio_path):
     return transcribe_audio(audio_path)
 
 def blocking_parse_frames(video_path):
-    # Example values; you should calculate the actual video duration if needed
     start_sec = 0
-    end_sec = 60  # Or use actual video duration
-    interval_sec = 10  # Extract a frame every 10 seconds
+    end_sec = 60  
+    interval_sec = 10  
 
     return extract_frames_and_upload(video_path, start_sec, end_sec, interval_sec)
 
