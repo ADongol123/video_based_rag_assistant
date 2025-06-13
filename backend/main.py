@@ -32,6 +32,7 @@ from langchain.embeddings import HuggingFaceEmbeddings
 from config import settings
 from utils.vector_store import qdrant_client
 from qdrant_client.models import PayloadSchemaType
+from utils.V2.scrapper import scrape_schedule_table_with_links, save_to_mongodb
 model = SentenceTransformer("sentence-transformers/all-mpnet-base-v2")  # or any other model you prefer
 app = FastAPI()
 @app.on_event("startup")
@@ -62,7 +63,22 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 @app.get("/")
 def root():
     return {"message": "YouTube RAG Assistant is running!"}
+# ------------------------------------------------------------------------------
+@app.post("/scrape-and-save",tags=["Scraping"])
+def scrape_and_save():
+    try:
+        rows = scrape_schedule_table_with_links("https://inst.eecs.berkeley.edu/~cs188/su25/")
+        if not rows:
+            raise HTTPException(status_code=404, detail="No data scraped from the website.")
+        inserted_count = save_to_mongodb(rows)
+        return {"message": f"{inserted_count} rows inserted into MongoDB."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
+
+
+
+# ------------------------------------------------------------------------------
 @app.get("/transcribe")
 async def transcribe_and_process(youtube_url: str = Query(...)):
     resp = requests.get(youtube_url)
