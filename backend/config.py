@@ -27,6 +27,9 @@ class Settings:
     
     # Embedding model
     EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-mpnet-base-v2")
+    
+    # Classifier
+    HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 
 
 settings = Settings()

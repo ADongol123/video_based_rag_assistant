@@ -40,9 +40,6 @@ from pathlib import Path
 from urllib.parse import urlparse, urljoin, parse_qs
 from pathlib import Path
 import uuid
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel
-from template_prompt.classifier import route_and_answer
 model = SentenceTransformer("sentence-transformers/all-mpnet-base-v2")  # or any other model you prefer
 
 scraped_collection = db["scraped_Data"]
@@ -73,37 +70,10 @@ db = db
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-
-
-class QueryInput(BaseModel):
-    question: str
-    
-    
 @app.get("/")
 def root():
     return {"message": "YouTube RAG Assistant is running!"}
 # ------------------------------------------------------------------------------
-
-
-class QueryInput(BaseModel):
-    question: str
-    
-
-class QuestionInput(BaseModel):
-    question: str
-
-class ClassificationOutput(BaseModel):
-    category: str
-# --- Exposed Function for main.py ---
-# --- Final Function Called by API ---
-# Optional helper function for FastAPI
-@app.post("/classify/", response_model=ClassificationOutput)
-def classify_question(payload: QuestionInput):
-    answer = route_and_answer(payload)
-    print("✅ Final Answer:\n", answer)
-
-# ------------------------------------------------------------------------------
-
 @app.post("/scrape-and-save",tags=["Scraping"])
 def scrape_and_save():
     try:
@@ -197,8 +167,6 @@ async def scrape_table():
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
     
 @app.post("/scrape-table-website", tags=["Scraping"])
 async def scrape_table_website():
@@ -220,21 +188,21 @@ async def scrape_table_website():
                     total_url += 1
                     print(full_url)
                     
-                    if full_url.startswith(base_url):
-                        print(full_url)
-                        # total_url += 1
-                        try:
-                            print("Scrapping started for url:", full_url)
-                            scrapped_data = extract_page_content(full_url)
-                            result = scraped_collection.insert_one(scrapped_data)
-                            print(f"Scraped and saved data from {full_url} with ID: {result.inserted_id}")
-                        except Exception as scrape_err:
-                            print(f"Failed scraping {full_url}: {scrape_err}")
-                            continue
-                    print("Total URL found:", total_url)
+        #             if full_url.startswith(base_url):
+        #                 print(full_url)
+        #                 # total_url += 1
+        #                 try:
+        #                     print("Scrapping started for url:", full_url)
+        #                     scrapped_data = extract_page_content(full_url)
+        #                     result = scraped_collection.insert_one(scrapped_data)
+        #                     print(f"Scraped and saved data from {full_url} with ID: {result.inserted_id}")
+        #                 except Exception as scrape_err:
+        #                     print(f"Failed scraping {full_url}: {scrape_err}")
+        #                     continue
+        #             print("Total URL found:", total_url)
 
 
-        return {"message": "Scraping and saving to collection completed successfully."}
+        # return {"message": "Scraping and saving to collection completed successfully."}
         print("Total URL found:", total_url)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

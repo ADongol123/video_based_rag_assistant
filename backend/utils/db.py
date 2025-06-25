@@ -10,5 +10,5 @@ if not MONGO_URI:
     raise ValueError("MONGO_URI not set in environment variables")
 
 client = MongoClient(MONGO_URI)
-db = client['youtube_rag']
+db = client['course_database']
 transcripts_collection = db['parsed_data']

@@ -19,7 +19,7 @@ def get_qdrant_vectorstore():
             must=[
                 rest.FieldCondition(
                     key="type",
-                    match=rest.MatchAny(any=["website"]) #Video add
+                    match=rest.MatchAny(any=["website","youtube_local"]) #Video add
                 )
             ]
         )

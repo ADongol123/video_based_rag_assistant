@@ -3,39 +3,18 @@ from bs4 import BeautifulSoup
 import re
 from config import settings
 from pymongo import MongoClient
+from urllib.parse import urljoin
+from datetime import datetime
+import re
+import pandas as pd
+from bson import ObjectId
+from urllib.parse import urljoin, urlparse
 
 mongo_client = MongoClient(settings.MONGO_URI)
 db = mongo_client["course_database"]
 collection = db["course_collection"]
+MODULE_NAME = "CS188"
 
-def parse_hw_cell(cell):
-    hw = {"title": "", "due": "", "parts": []}
-    text = cell.get_text(" ", strip=True)
-    match = re.search(r'(HW\d+.*?)(?:\(due (.*?)\))?', text)
-    if match:
-        hw["title"] = match.group(1).strip()
-        hw["due"] = match.group(2).strip() if match.group(2) else ""
-    links = cell.find_all("a")
-    for link in links:
-        hw["parts"].append({
-            "text": link.text.strip(),
-            "link": link.get("href")
-        })
-    return hw if hw["title"] or hw["parts"] else None
-
-def parse_project_cell(cell):
-    text = cell.get_text(" ", strip=True)
-    match = re.search(r'(Project \d+.*?)\(due (.*?)\)', text)
-    if match:
-        project_title = match.group(1).strip()
-        due = match.group(2).strip()
-        link = cell.find("a")
-        return {
-            "title": project_title,
-            "due": due,
-            "link": link.get("href") if link else None
-        }
-    return None
 
 def scrape_schedule_table_with_links(url):
     response = requests.get(url)
@@ -137,3 +116,148 @@ def save_to_mongodb(rows):
     result = collection.insert_many(prepared_rows)
     print(f"✅ Inserted {len(result.inserted_ids)} documents into MongoDB.")
     return len(result.inserted_ids)
+
+
+
+def extract_page_content(url):
+    resp = requests.get(url)
+    soup = BeautifulSoup(resp.text, "html.parser")
+
+    title_tag = soup.find("h1")
+    title = title_tag.text.strip() if title_tag else "No Title"
+
+    sidebar_texts = []
+    for box in soup.select(".sidebar, .note, .admonition, .boxed"):
+        text = box.get_text(separator=" ", strip=True)
+        sidebar_texts.append(text)
+
+    main_text_parts = []
+    for tag in soup.select("main, article, #content, .content"):
+        main_text_parts.append(tag.get_text(separator=" ", strip=True))
+    main_text = " ".join(main_text_parts).strip()
+
+    content = main_text + " " + " ".join(sidebar_texts)
+    content = " ".join(content.split())
+
+    images = []
+    for img in soup.find_all("img"):
+        src = img.get("src")
+        if src:
+            images.append(urljoin(url, src))
+
+    lecture_number = None
+    m = re.search(r"chapter(\d+)", url)
+    if m:
+        lecture_number = int(m.group(1))
+
+    metadata = {
+        "date": datetime.today().strftime("%Y-%m-%d"),
+        "module": "",
+        "lecture_number": lecture_number,
+        "topic": title,
+        "chunk_id": 1
+    }
+
+    return {
+        "source": url,
+        "embedings": [],
+        "type": "website",
+        "title": title,
+        "content": [{"text":content}],
+        "images": images,
+        "metadata": metadata
+    }
+
+
+
+    
+
+MODULE_NAME = "CS188"  # You can make this dynamic if needed
+
+def universal_scrapper(url):
+    resp = requests.get(url)
+    soup = BeautifulSoup(resp.text, "html.parser")
+
+    title_tag = soup.find("h1")
+    title = title_tag.text.strip() if title_tag else "No Title"
+
+    sidebar_texts = []
+    for box in soup.select(".sidebar, .note, .admonition, .boxed"):
+        text = box.get_text(separator=" ", strip=True)
+        sidebar_texts.append(text)
+
+    main_text_parts = []
+    for tag in soup.select("main, article, #content, .content"):
+        main_text_parts.append(tag.get_text(separator=" ", strip=True))
+    main_text = " ".join(main_text_parts).strip()
+
+    content = main_text + " " + " ".join(sidebar_texts)
+    content = " ".join(content.split())
+
+    images = []
+    for img in soup.find_all("img"):
+        src = img.get("src")
+        if src:
+            images.append(urljoin(url, src))
+
+    lecture_number = None
+    m = re.search(r"chapter(\d+)", url)
+    if m:
+        lecture_number = int(m.group(1))
+
+    return format_scraped_doc(
+        source=url,
+        title=title,
+        text_content=content,
+        content_type="universal-website",
+        lecture_number=lecture_number,
+        images=images
+    )
+
+def crawl_all_pages(start_url, max_pages=50):
+    visited = set()
+    to_visit = [start_url]
+    base_domain = urlparse(start_url).netloc
+    scraped_docs = []
+
+    while to_visit and len(visited) < max_pages:
+        current_url = to_visit.pop()
+        if current_url in visited:
+            continue
+
+        try:
+            print(f"🌐 Scraping: {current_url}")
+            doc = universal_scrapper(current_url)
+            scraped_docs.append(doc)
+            visited.add(current_url)
+
+            soup = BeautifulSoup(requests.get(current_url).text, "html.parser")
+            for link in soup.find_all("a", href=True):
+                href = link["href"]
+                full_url = urljoin(current_url, href)
+                parsed = urlparse(full_url)
+                if parsed.netloc == base_domain and full_url not in visited:
+                    to_visit.append(full_url)
+        except Exception as e:
+            print(f"❌ Failed on {current_url}: {e}")
+            continue
+
+    return scraped_docs
+
+def format_scraped_doc(source, title, text_content, content_type="website", lecture_number=None, images=None):
+    return {
+        "_id": str(ObjectId()),
+        "source": source,
+        "embeddings": [],
+        "type": content_type,
+        "title": title,
+        "content": [{"text": text_content}],
+        "metadata": {
+            "date": datetime.today().strftime("%Y-%m-%d"),
+            "module": MODULE_NAME,
+            "topic": title,
+            "chunk_id": 1,
+            "lecture_number": lecture_number
+        },
+        "images": images or []
+    }
