@@ -1,307 +1,337 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Loader2, Play, Upload, Link, Video, Sparkles } from "lucide-react"
-import VideoPlayer from "./components/video-player"
-import ChatInterface from "./components/chat-interface"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Separator } from "@/components/ui/separator"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import {
+  PlusIcon,
+  MessageSquareIcon,
+  SendIcon,
+  MenuIcon,
+  UserIcon,
+  BotIcon,
+  LogOutIcon,
+  SettingsIcon,
+} from "lucide-react"
+import { AuthForm } from "@/components/auth-form"
+import { AdminDashboard } from "@/components/admin-dashboard"
 
-interface VideoData {
-  url: string
-  title?: string
-  description?: string
-  duration?: string
-  thumbnail?: string
-  isLocal?: boolean
+interface Message {
+  id: string
+  content: string
+  role: "user" | "assistant"
+  timestamp: Date
 }
 
-export default function VideoAnalysisApp() {
-  const [videoUrl, setVideoUrl] = useState("")
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [videoData, setVideoData] = useState<VideoData | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [activeTab, setActiveTab] = useState("url")
+interface Chat {
+  id: string
+  title: string
+  messages: Message[]
+  lastMessage: Date
+}
 
-  const handleUrlSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!videoUrl.trim()) return
+interface User {
+  name: string
+  email: string
+  avatar?: string
+}
 
-    setIsLoading(true)
-    setError("")
+export default function ChatGPTInterface() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [authMode, setAuthMode] = useState<"login" | "register">("login")
+  const [user, setUser] = useState<User | null>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [currentChatId, setCurrentChatId] = useState("1")
+  const [inputValue, setInputValue] = useState("")
+  const [userType, setUserType] = useState<"user" | "admin">("user")
 
-    try {
-      const response = await fetch("/api/analyze-video", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+  // Mock data for demonstration
+  const [chats, setChats] = useState<Chat[]>([
+    {
+      id: "1",
+      title: "Getting Started with AI",
+      lastMessage: new Date(),
+      messages: [
+        {
+          id: "1",
+          content: "Hello! How can I help you today?",
+          role: "assistant",
+          timestamp: new Date(),
         },
-        body: JSON.stringify({ url: videoUrl }),
-      })
+        {
+          id: "2",
+          content: "I want to learn about artificial intelligence",
+          role: "user",
+          timestamp: new Date(),
+        },
+        {
+          id: "3",
+          content:
+            "Great! Artificial Intelligence (AI) is a fascinating field that involves creating computer systems capable of performing tasks that typically require human intelligence. This includes things like learning, reasoning, problem-solving, perception, and language understanding.\n\nHere are some key areas of AI:\n\n1. **Machine Learning** - Systems that can learn and improve from experience\n2. **Natural Language Processing** - Understanding and generating human language\n3. **Computer Vision** - Interpreting and understanding visual information\n4. **Robotics** - Creating intelligent machines that can interact with the physical world\n\nWhat specific aspect of AI interests you most?",
+          role: "assistant",
+          timestamp: new Date(),
+        },
+      ],
+    },
+    {
+      id: "2",
+      title: "Recipe Ideas",
+      lastMessage: new Date(Date.now() - 86400000),
+      messages: [
+        {
+          id: "4",
+          content: "Can you suggest some healthy dinner recipes?",
+          role: "user",
+          timestamp: new Date(Date.now() - 86400000),
+        },
+      ],
+    },
+    {
+      id: "3",
+      title: "Travel Planning",
+      lastMessage: new Date(Date.now() - 172800000),
+      messages: [
+        {
+          id: "5",
+          content: "Help me plan a trip to Japan",
+          role: "user",
+          timestamp: new Date(Date.now() - 172800000),
+        },
+      ],
+    },
+  ])
 
-      const data = await response.json()
+  const currentChat = chats.find((chat) => chat.id === currentChatId)
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to analyze video")
-      }
+  const handleAuthSuccess = (type: "user" | "admin") => {
+    setIsAuthenticated(true)
+    setUserType(type)
+    setUser({
+      name: type === "admin" ? "Dr. Sarah Johnson" : authMode === "register" ? "New User" : "John Doe",
+      email:
+        type === "admin"
+          ? "sarah.johnson@school.edu"
+          : authMode === "register"
+            ? "newuser@example.com"
+            : "john@example.com",
+    })
+  }
 
-      setVideoData(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
-    } finally {
-      setIsLoading(false)
+  const handleLogout = () => {
+    setIsAuthenticated(false)
+    setUser(null)
+    setUserType("user")
+  }
+
+  const handleSendMessage = () => {
+    if (!inputValue.trim()) return
+
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      content: inputValue,
+      role: "user",
+      timestamp: new Date(),
     }
+
+    setChats((prevChats) =>
+      prevChats.map((chat) =>
+        chat.id === currentChatId
+          ? { ...chat, messages: [...chat.messages, newMessage], lastMessage: new Date() }
+          : chat,
+      ),
+    )
+
+    setInputValue("")
   }
 
-  const handleFileUpload = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedFile) return
-
-    setIsLoading(true)
-    setError("")
-
-    try {
-      const formData = new FormData()
-      formData.append("video", selectedFile)
-
-      const response = await fetch("/api/upload-video", {
-        method: "POST",
-        body: formData,
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to upload video")
-      }
-
-      setVideoData(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
-    } finally {
-      setIsLoading(false)
+  const handleNewChat = () => {
+    const newChatId = Date.now().toString()
+    const newChat: Chat = {
+      id: newChatId,
+      title: "New Chat",
+      messages: [],
+      lastMessage: new Date(),
     }
+
+    setChats((prevChats) => [newChat, ...prevChats])
+    setCurrentChatId(newChatId)
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      // Check file type
-      if (!file.type.startsWith("video/")) {
-        setError("Please select a valid video file")
-        return
-      }
-      // Check file size (50MB limit)
-      if (file.size > 50 * 1024 * 1024) {
-        setError("File size must be less than 50MB")
-        return
-      }
-      setSelectedFile(file)
-      setError("")
-    }
-  }
-
-  const resetVideo = () => {
-    setVideoData(null)
-    setVideoUrl("")
-    setSelectedFile(null)
-    setError("")
-  }
-
-  if (videoData) {
+  // Show authentication form if not authenticated
+  if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-4 flex items-center justify-between">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Video Analysis Chat
-            </h1>
-            <Button onClick={resetVideo} variant="outline" className="hover:bg-blue-50">
-              Analyze New Video
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-120px)]">
-            <VideoPlayer videoData={videoData} />
-            <ChatInterface videoData={videoData} />
-          </div>
-        </div>
-      </div>
+      <AuthForm
+        mode={authMode}
+        onToggleMode={() => setAuthMode(authMode === "login" ? "register" : "login")}
+        onAuthSuccess={handleAuthSuccess}
+      />
     )
   }
 
+  // Show admin dashboard for teachers
+  if (isAuthenticated && userType === "admin" && user) {
+    return <AdminDashboard user={user} onLogout={handleLogout} />
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
-        {/* Hero Section */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-4">
-            <Video className="h-8 w-8 text-white" />
-          </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-            Video Analysis Chat
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Upload your video or paste a URL to start an intelligent conversation about your content
-          </p>
+    <div className="flex h-screen bg-gray-50">
+      {/* Sidebar */}
+      <div
+        className={`${sidebarOpen ? "w-64" : "w-0"} transition-all duration-300 bg-gray-900 text-white flex flex-col overflow-hidden`}
+      >
+        <div className="p-4">
+          <Button
+            onClick={handleNewChat}
+            className="w-full bg-gray-800 hover:bg-gray-700 text-white border border-gray-600"
+            variant="outline"
+          >
+            <PlusIcon className="w-4 h-4 mr-2" />
+            New Chat
+          </Button>
         </div>
 
-        {/* Main Card */}
-        <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
-          <CardHeader className="text-center pb-2">
-            <CardTitle className="flex items-center justify-center gap-2 text-xl">
-              <Sparkles className="h-5 w-5 text-purple-500" />
-              Get Started
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="url" className="flex items-center gap-2">
-                  <Link className="h-4 w-4" />
-                  Video URL
-                </TabsTrigger>
-                <TabsTrigger value="upload" className="flex items-center gap-2">
-                  <Upload className="h-4 w-4" />
-                  Upload File
-                </TabsTrigger>
-              </TabsList>
+        <Separator className="bg-gray-700" />
 
-              <TabsContent value="url" className="space-y-4">
-                <form onSubmit={handleUrlSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Video URL</label>
-                    <Input
-                      type="url"
-                      placeholder="https://www.youtube.com/watch?v=..."
-                      value={videoUrl}
-                      onChange={(e) => setVideoUrl(e.target.value)}
-                      disabled={isLoading}
-                      className="h-12 text-base"
-                    />
-                  </div>
+        <ScrollArea className="flex-1 px-2">
+          <div className="space-y-1 py-2">
+            {chats.map((chat) => (
+              <Button
+                key={chat.id}
+                variant={currentChatId === chat.id ? "secondary" : "ghost"}
+                className={`w-full justify-start text-left h-auto p-3 ${
+                  currentChatId === chat.id
+                    ? "bg-gray-700 text-white"
+                    : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                }`}
+                onClick={() => setCurrentChatId(chat.id)}
+              >
+                <MessageSquareIcon className="w-4 h-4 mr-2 flex-shrink-0" />
+                <span className="truncate">{chat.title}</span>
+              </Button>
+            ))}
+          </div>
+        </ScrollArea>
 
-                  <Button
-                    type="submit"
-                    className="w-full h-12 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium"
-                    disabled={isLoading || !videoUrl.trim()}
+        {/* User Profile Section */}
+        <div className="p-4 border-t border-gray-700">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="w-full justify-start p-2 h-auto text-white hover:bg-gray-800">
+                <Avatar className="w-8 h-8 mr-3">
+                  <AvatarFallback className="bg-green-600 text-white text-sm">
+                    {user?.name?.charAt(0) || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-medium truncate">{user?.name}</p>
+                  <p className="text-xs text-gray-400 truncate">{user?.email}</p>
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem>
+                <SettingsIcon className="w-4 h-4 mr-2" />
+                Settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                <LogOutIcon className="w-4 h-4 mr-2" />
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between">
+          <div className="flex items-center">
+            <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(!sidebarOpen)} className="mr-4">
+              <MenuIcon className="w-5 h-5" />
+            </Button>
+            <h1 className="text-xl font-semibold text-gray-800">{currentChat?.title || "New Chat"}</h1>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
+            <Avatar className="w-8 h-8">
+              <AvatarFallback className="bg-green-600 text-white text-sm">
+                {user?.name?.charAt(0) || "U"}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+        </div>
+
+        {/* Messages Area */}
+        <ScrollArea className="flex-1 p-4">
+          <div className="max-w-3xl mx-auto space-y-6">
+            {currentChat?.messages.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <BotIcon className="w-8 h-8 text-gray-500" />
+                </div>
+                <h2 className="text-2xl font-semibold text-gray-800 mb-2">How can I help you today?</h2>
+                <p className="text-gray-600">Start a conversation by typing a message below.</p>
+              </div>
+            ) : (
+              currentChat?.messages.map((message) => (
+                <div key={message.id} className="flex items-start space-x-4">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      message.role === "user" ? "bg-blue-500" : "bg-green-500"
+                    }`}
                   >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        Analyzing Video...
-                      </>
+                    {message.role === "user" ? (
+                      <UserIcon className="w-4 h-4 text-white" />
                     ) : (
-                      <>
-                        <Play className="mr-2 h-5 w-5" />
-                        Analyze Video
-                      </>
+                      <BotIcon className="w-4 h-4 text-white" />
                     )}
-                  </Button>
-                </form>
-
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <h3 className="font-medium text-blue-900 mb-2">Supported Platforms:</h3>
-                  <div className="grid grid-cols-3 gap-2 text-sm text-blue-700">
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                      YouTube
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      Vimeo
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      Direct Links
+                  </div>
+                  <div className="flex-1">
+                    <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+                      <p className="text-gray-800 whitespace-pre-wrap">{message.content}</p>
                     </div>
                   </div>
                 </div>
-              </TabsContent>
-
-              <TabsContent value="upload" className="space-y-4">
-                <form onSubmit={handleFileUpload} className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Upload Video File</label>
-                    <div className="relative">
-                      <Input
-                        type="file"
-                        accept="video/*"
-                        onChange={handleFileChange}
-                        disabled={isLoading}
-                        className="h-12 text-base file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                      />
-                    </div>
-                    {selectedFile && (
-                      <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                        Selected: {selectedFile.name} ({(selectedFile.size / (1024 * 1024)).toFixed(2)} MB)
-                      </div>
-                    )}
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-medium"
-                    disabled={isLoading || !selectedFile}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        Uploading Video...
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="mr-2 h-5 w-5" />
-                        Upload & Analyze
-                      </>
-                    )}
-                  </Button>
-                </form>
-
-                <div className="bg-purple-50 rounded-lg p-4">
-                  <h3 className="font-medium text-purple-900 mb-2">Upload Requirements:</h3>
-                  <ul className="text-sm text-purple-700 space-y-1">
-                    <li>• Maximum file size: 50MB</li>
-                    <li>• Supported formats: MP4, WebM, OGG, AVI, MOV</li>
-                    <li>• Files are processed securely and privately</li>
-                  </ul>
-                </div>
-              </TabsContent>
-            </Tabs>
-
-            {error && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>
+              ))
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </ScrollArea>
 
-        {/* Features Section */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="text-center p-4 bg-white/60 backdrop-blur-sm rounded-lg">
-            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-              <Video className="h-5 w-5 text-blue-600" />
+        {/* Input Area */}
+        <div className="bg-white border-t border-gray-200 p-4">
+          <div className="max-w-3xl mx-auto">
+            <div className="flex space-x-4">
+              <Input
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder="Type your message here..."
+                className="flex-1"
+                onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+              />
+              <Button
+                onClick={handleSendMessage}
+                disabled={!inputValue.trim()}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <SendIcon className="w-4 h-4" />
+              </Button>
             </div>
-            <h3 className="font-semibold text-gray-800 mb-1">Smart Analysis</h3>
-            <p className="text-sm text-gray-600">AI-powered video content understanding</p>
-          </div>
-          <div className="text-center p-4 bg-white/60 backdrop-blur-sm rounded-lg">
-            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
-              <Sparkles className="h-5 w-5 text-purple-600" />
-            </div>
-            <h3 className="font-semibold text-gray-800 mb-1">Interactive Chat</h3>
-            <p className="text-sm text-gray-600">Ask questions about your video content</p>
-          </div>
-          <div className="text-center p-4 bg-white/60 backdrop-blur-sm rounded-lg">
-            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-              <Upload className="h-5 w-5 text-green-600" />
-            </div>
-            <h3 className="font-semibold text-gray-800 mb-1">Multiple Sources</h3>
-            <p className="text-sm text-gray-600">URLs and local file uploads supported</p>
+            <p className="text-xs text-gray-500 mt-2 text-center">
+              This is a UI demo. Messages are not processed by AI.
+            </p>
           </div>
         </div>
       </div>
