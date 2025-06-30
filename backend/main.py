@@ -1,4 +1,8 @@
 # backend/main.py
+# auth_routes
+from auth import auth_routes
+from utils.db import ensure_indexes
+
 
 from fastapi import FastAPI, Query, HTTPException,UploadFile,File
 from utils.downlaoder import download_audio_webm,download_youtube_video
@@ -83,8 +87,13 @@ class QueryInput(BaseModel):
 def root():
     return {"message": "YouTube RAG Assistant is running!"}
 # ------------------------------------------------------------------------------
+# AUTH ROUTES
+app.include_router(auth_routes.app)
 
-
+@app.on_event("startup")
+async def startup_event():
+    await ensure_indexes()
+# -------------------------------------------------------------------------------
 class QueryInput(BaseModel):
     question: str
     
