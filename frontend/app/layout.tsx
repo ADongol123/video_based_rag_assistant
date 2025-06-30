@@ -2,8 +2,9 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'AI',
-  description: 'Intro to AI',
+  title: 'Intro to AI',
+  description: 'Created with NextJS',
+  generator: '',
 }
 
 export default function RootLayout({

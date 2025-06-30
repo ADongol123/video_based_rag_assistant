@@ -1,18 +1,24 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Badge } from "@/components/ui/badge"
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   BarChart,
   Bar,
@@ -26,10 +32,11 @@ import {
   PieChart,
   Pie,
   Cell,
-} from "recharts"
+} from "recharts";
 import {
   UsersIcon,
   MessageSquareIcon,
+  ChartNetwork,
   TrendingUpIcon,
   ClockIcon,
   LogOutIcon,
@@ -37,19 +44,20 @@ import {
   DownloadIcon,
   RefreshCwIcon,
   EyeIcon,
-} from "lucide-react"
-import { FileTextIcon } from "lucide-react"
-import { KnowledgeBaseManager } from "@/components/knowledge-base-manager" // Import KnowledgeBaseManager
+} from "lucide-react";
+import { FileTextIcon } from "lucide-react";
+import { KnowledgeBaseManager } from "@/components/knowledge-base-manager"; // Import KnowledgeBaseManager
+import { AdminChatTest } from "@/components/admin-chat-test"; // Import AdminChatTest
 
 interface User {
-  name: string
-  email: string
-  avatar?: string
+  name: string;
+  email: string;
+  avatar?: string;
 }
 
 interface AdminDashboardProps {
-  user: User
-  onLogout: () => void
+  user: User;
+  onLogout: () => void;
 }
 
 // Mock data for analytics
@@ -61,14 +69,14 @@ const dailyActiveUsers = [
   { date: "Fri", users: 55 },
   { date: "Sat", users: 38 },
   { date: "Sun", users: 42 },
-]
+];
 
 const questionCategories = [
   { name: "Math", value: 35, color: "#8884d8" },
   { name: "Science", value: 28, color: "#82ca9d" },
   { name: "History", value: 20, color: "#ffc658" },
   { name: "Literature", value: 17, color: "#ff7300" },
-]
+];
 
 const hourlyActivity = [
   { hour: "00", messages: 5 },
@@ -83,7 +91,7 @@ const hourlyActivity = [
   { hour: "18", messages: 32 },
   { hour: "20", messages: 28 },
   { hour: "22", messages: 15 },
-]
+];
 
 const recentQuestions = [
   {
@@ -126,7 +134,7 @@ const recentQuestions = [
     timestamp: "15 minutes ago",
     status: "answered",
   },
-]
+];
 
 const topUsers = [
   { name: "Alice Johnson", messages: 45, lastActive: "2 min ago" },
@@ -134,10 +142,10 @@ const topUsers = [
   { name: "Carol Davis", messages: 32, lastActive: "1 hour ago" },
   { name: "David Wilson", messages: 28, lastActive: "2 hours ago" },
   { name: "Eva Brown", messages: 25, lastActive: "3 hours ago" },
-]
+];
 
 export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
-  const [activeTab, setActiveTab] = useState("overview")
+  const [activeTab, setActiveTab] = useState("overview");
 
   const stats = [
     {
@@ -168,7 +176,7 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
       icon: ClockIcon,
       color: "text-orange-600",
     },
-  ]
+  ];
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -186,7 +194,8 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
               { id: "users", label: "Users", icon: UsersIcon },
               { id: "questions", label: "Questions", icon: MessageSquareIcon },
               { id: "knowledge", label: "Knowledge Base", icon: FileTextIcon },
-              { id: "analytics", label: "Analytics", icon: BarChart },
+              { id: "chat-test", label: "Test Chat", icon: MessageSquareIcon },
+              { id: "analytics", label: "Analytics", icon: ChartNetwork },
             ].map((item) => (
               <Button
                 key={item.id}
@@ -205,7 +214,10 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
         <div className="p-4 border-t border-gray-200">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="w-full justify-start p-2 h-auto">
+              <Button
+                variant="ghost"
+                className="w-full justify-start p-2 h-auto"
+              >
                 <Avatar className="w-8 h-8 mr-3">
                   <AvatarFallback className="bg-blue-600 text-white text-sm">
                     {user?.name?.charAt(0) || "T"}
@@ -238,8 +250,12 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
         <div className="bg-white border-b border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 capitalize">{activeTab}</h2>
-              <p className="text-gray-600 mt-1">Monitor and manage your AI chat system</p>
+              <h2 className="text-2xl font-bold text-gray-900 capitalize">
+                {activeTab}
+              </h2>
+              <p className="text-gray-600 mt-1">
+                Monitor and manage your AI chat system
+              </p>
             </div>
             <div className="flex space-x-2">
               <Button variant="outline" size="sm">
@@ -265,10 +281,18 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
                     <CardContent className="p-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                          <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                          <p className="text-sm font-medium text-gray-600">
+                            {stat.title}
+                          </p>
+                          <p className="text-2xl font-bold text-gray-900 mt-1">
+                            {stat.value}
+                          </p>
                           <p
-                            className={`text-sm mt-1 ${stat.change.startsWith("+") ? "text-green-600" : "text-red-600"}`}
+                            className={`text-sm mt-1 ${
+                              stat.change.startsWith("+")
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }`}
                           >
                             {stat.change} from last week
                           </p>
@@ -285,7 +309,9 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
                 <Card>
                   <CardHeader>
                     <CardTitle>Daily Active Users</CardTitle>
-                    <CardDescription>User activity over the past week</CardDescription>
+                    <CardDescription>
+                      User activity over the past week
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={300}>
@@ -303,7 +329,9 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
                 <Card>
                   <CardHeader>
                     <CardTitle>Question Categories</CardTitle>
-                    <CardDescription>Distribution of questions by subject</CardDescription>
+                    <CardDescription>
+                      Distribution of questions by subject
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={300}>
@@ -315,7 +343,9 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
                           outerRadius={80}
                           fill="#8884d8"
                           dataKey="value"
-                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          label={({ name, percent }) =>
+                            `${name} ${(percent * 100).toFixed(0)}%`
+                          }
                         >
                           {questionCategories.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
@@ -332,21 +362,40 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
               <Card>
                 <CardHeader>
                   <CardTitle>Recent Questions</CardTitle>
-                  <CardDescription>Latest questions from students</CardDescription>
+                  <CardDescription>
+                    Latest questions from students
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     {recentQuestions.slice(0, 5).map((question) => (
-                      <div key={question.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div
+                        key={question.id}
+                        className="flex items-center justify-between p-4 border rounded-lg"
+                      >
                         <div className="flex-1">
-                          <p className="font-medium text-gray-900">{question.user}</p>
-                          <p className="text-gray-600 mt-1">{question.question}</p>
+                          <p className="font-medium text-gray-900">
+                            {question.user}
+                          </p>
+                          <p className="text-gray-600 mt-1">
+                            {question.question}
+                          </p>
                           <div className="flex items-center mt-2 space-x-2">
-                            <Badge variant="secondary">{question.category}</Badge>
-                            <span className="text-xs text-gray-500">{question.timestamp}</span>
+                            <Badge variant="secondary">
+                              {question.category}
+                            </Badge>
+                            <span className="text-xs text-gray-500">
+                              {question.timestamp}
+                            </span>
                           </div>
                         </div>
-                        <Badge variant={question.status === "answered" ? "default" : "destructive"}>
+                        <Badge
+                          variant={
+                            question.status === "answered"
+                              ? "default"
+                              : "destructive"
+                          }
+                        >
                           {question.status}
                         </Badge>
                       </div>
@@ -362,23 +411,34 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
               <Card>
                 <CardHeader>
                   <CardTitle>Top Active Users</CardTitle>
-                  <CardDescription>Most engaged students this week</CardDescription>
+                  <CardDescription>
+                    Most engaged students this week
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     {topUsers.map((user, index) => (
-                      <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-4 border rounded-lg"
+                      >
                         <div className="flex items-center space-x-3">
                           <Avatar>
-                            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                            <AvatarFallback>
+                              {user.name.charAt(0)}
+                            </AvatarFallback>
                           </Avatar>
                           <div>
                             <p className="font-medium">{user.name}</p>
-                            <p className="text-sm text-gray-600">Last active: {user.lastActive}</p>
+                            <p className="text-sm text-gray-600">
+                              Last active: {user.lastActive}
+                            </p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium">{user.messages} messages</p>
+                          <p className="font-medium">
+                            {user.messages} messages
+                          </p>
                           <Button variant="ghost" size="sm">
                             <EyeIcon className="w-4 h-4 mr-1" />
                             View
@@ -397,25 +457,44 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
               <Card>
                 <CardHeader>
                   <CardTitle>All Questions</CardTitle>
-                  <CardDescription>Complete list of student questions</CardDescription>
+                  <CardDescription>
+                    Complete list of student questions
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     {recentQuestions.map((question) => (
-                      <div key={question.id} className="flex items-start justify-between p-4 border rounded-lg">
+                      <div
+                        key={question.id}
+                        className="flex items-start justify-between p-4 border rounded-lg"
+                      >
                         <div className="flex-1">
                           <div className="flex items-center space-x-2 mb-2">
                             <Avatar className="w-6 h-6">
-                              <AvatarFallback className="text-xs">{question.user.charAt(0)}</AvatarFallback>
+                              <AvatarFallback className="text-xs">
+                                {question.user.charAt(0)}
+                              </AvatarFallback>
                             </Avatar>
-                            <span className="font-medium text-sm">{question.user}</span>
-                            <span className="text-xs text-gray-500">{question.timestamp}</span>
+                            <span className="font-medium text-sm">
+                              {question.user}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {question.timestamp}
+                            </span>
                           </div>
-                          <p className="text-gray-900 mb-2">{question.question}</p>
+                          <p className="text-gray-900 mb-2">
+                            {question.question}
+                          </p>
                           <Badge variant="secondary">{question.category}</Badge>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Badge variant={question.status === "answered" ? "default" : "destructive"}>
+                          <Badge
+                            variant={
+                              question.status === "answered"
+                                ? "default"
+                                : "destructive"
+                            }
+                          >
                             {question.status}
                           </Badge>
                           <Button variant="ghost" size="sm">
@@ -435,7 +514,9 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
               <Card>
                 <CardHeader>
                   <CardTitle>Hourly Message Activity</CardTitle>
-                  <CardDescription>Message volume throughout the day</CardDescription>
+                  <CardDescription>
+                    Message volume throughout the day
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={400}>
@@ -444,7 +525,12 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
                       <XAxis dataKey="hour" />
                       <YAxis />
                       <Tooltip />
-                      <Line type="monotone" dataKey="messages" stroke="#3b82f6" strokeWidth={2} />
+                      <Line
+                        type="monotone"
+                        dataKey="messages"
+                        stroke="#3b82f6"
+                        strokeWidth={2}
+                      />
                     </LineChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -457,8 +543,14 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
               <KnowledgeBaseManager />
             </div>
           )}
+
+          {activeTab === "chat-test" && (
+            <div className="h-full">
+              <AdminChatTest />
+            </div>
+          )}
         </ScrollArea>
       </div>
     </div>
-  )
+  );
 }
