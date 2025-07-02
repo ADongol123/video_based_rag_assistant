@@ -13,7 +13,8 @@ client = AsyncIOMotorClient(MONGO_URI)
 db = client['course_database']
 transcripts_collection = db['parsed_data']
 user_collection = db['users']
-
+scraped_collection = db["scraped_Data"]
+course_collection = db["course_collection"]
 
 # Ensure email unique index
 async def ensure_indexes():

@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from utils.db import user_collection
 from schemas.user_schemas import UserLogin, UserRegister, TokenResponse,SuperAdminCreate
 from utils.password_hash import hash_password, verify_password
-from auth.auth_handler import (
+from api.auth.auth_handler import (
     create_access_token,
     create_refresh_token,
     decode_access_token,
