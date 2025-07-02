@@ -1,5 +1,5 @@
 import os
-from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 from pymongo import ASCENDING
 load_dotenv() 
@@ -9,7 +9,7 @@ MONGO_URI = os.getenv("MONGO_URI")
 if not MONGO_URI:
     raise ValueError("MONGO_URI not set in environment variables")
 
-client = MongoClient(MONGO_URI)
+client = AsyncIOMotorClient(MONGO_URI)
 db = client['course_database']
 transcripts_collection = db['parsed_data']
 user_collection = db['users']

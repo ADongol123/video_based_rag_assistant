@@ -1,48 +1,100 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { EyeIcon, EyeOffIcon, BotIcon, GithubIcon, MailIcon } from "lucide-react"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import {
+  EyeIcon,
+  EyeOffIcon,
+  BotIcon,
+  GithubIcon,
+  MailIcon,
+} from "lucide-react";
+import { apiPost } from "@/lib/apiClient";
 
 interface AuthFormProps {
-  mode: "login" | "register"
-  onToggleMode: () => void
-  onAuthSuccess: (userType: "user" | "admin") => void
+  mode: "login" | "register";
+  onToggleMode: () => void;
+  onAuthSuccess: (userType: "user" | "admin" | "superadmin") => void;
 }
 
 export function AuthForm({ mode, onToggleMode, onAuthSuccess }: AuthFormProps) {
-  const [showPassword, setShowPassword] = useState(false)
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     confirmPassword: "",
-  })
-  const [isLoading, setIsLoading] = useState(false)
-  const [userType, setUserType] = useState<"user" | "admin">("user")
-
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [userType, setUserType] = useState<"user" | "admin" | "superadmin">(
+    "user"
+  );
   const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    setIsLoading(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    try {
+      if (isLogin) {
+        // LOGIN MODE
+        const loginData = new URLSearchParams();
+        loginData.append("username", formData.email);
+        loginData.append("password", formData.password);
 
-    setIsLoading(false)
-    onAuthSuccess(userType)
-  }
+        const res = await apiPost(
+          "/auth/login",
+          loginData,
+          null,
+          "application/x-www-form-urlencoded"
+        );
+        console.log(res?.role);
+        // Save tokens (you can also use your AuthContext instead)
+        localStorage.setItem("accessToken", res.access_token);
+        localStorage.setItem("refreshToken", res.refresh_token);
 
-  const isLogin = mode === "login"
+        // Success!
+        onAuthSuccess(res?.role);
+      } else {
+        // REGISTER MODE
+        const registerPayload = {
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          confirm_password: formData.confirmPassword,
+          role: userType,
+        };
+
+        await apiPost("/auth/register", registerPayload);
+
+        // Optionally auto-switch to login
+        onToggleMode();
+        alert("Registration successful! Please login.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert("Error: " + err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const isLogin = mode === "login";
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -52,8 +104,12 @@ export function AuthForm({ mode, onToggleMode, onAuthSuccess }: AuthFormProps) {
           <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
             <BotIcon className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Welcome to ChatAI</h1>
-          <p className="text-gray-600 mt-2">{isLogin ? "Sign in to your account" : "Create your account"}</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Welcome to ChatAI
+          </h1>
+          <p className="text-gray-600 mt-2">
+            {isLogin ? "Sign in to your account" : "Create your account"}
+          </p>
         </div>
 
         <Card className="shadow-lg border-0">
@@ -62,31 +118,13 @@ export function AuthForm({ mode, onToggleMode, onAuthSuccess }: AuthFormProps) {
               {isLogin ? "Sign In" : "Create Account"}
             </CardTitle>
             <CardDescription className="text-center">
-              {isLogin ? "Enter your credentials to access your account" : "Fill in your information to get started"}
+              {isLogin
+                ? "Enter your credentials to access your account"
+                : "Fill in your information to get started"}
             </CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-4">
-            {/* User Type Selection */}
-            <div className="flex space-x-2 p-1 bg-gray-100 rounded-lg">
-              <Button
-                type="button"
-                variant={userType === "user" ? "default" : "ghost"}
-                className={`flex-1 ${userType === "user" ? "bg-green-600 hover:bg-green-700" : ""}`}
-                onClick={() => setUserType("user")}
-              >
-                Student
-              </Button>
-              <Button
-                type="button"
-                variant={userType === "admin" ? "default" : "ghost"}
-                className={`flex-1 ${userType === "admin" ? "bg-blue-600 hover:bg-blue-700" : ""}`}
-                onClick={() => setUserType("admin")}
-              >
-                Teacher
-              </Button>
-            </div>
-
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
@@ -125,7 +163,9 @@ export function AuthForm({ mode, onToggleMode, onAuthSuccess }: AuthFormProps) {
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
                     value={formData.password}
-                    onChange={(e) => handleInputChange("password", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("password", e.target.value)
+                    }
                     required
                     className="h-11 pr-10"
                   />
@@ -153,7 +193,9 @@ export function AuthForm({ mode, onToggleMode, onAuthSuccess }: AuthFormProps) {
                     type="password"
                     placeholder="Confirm your password"
                     value={formData.confirmPassword}
-                    onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("confirmPassword", e.target.value)
+                    }
                     required={!isLogin}
                     className="h-11"
                   />
@@ -172,13 +214,20 @@ export function AuthForm({ mode, onToggleMode, onAuthSuccess }: AuthFormProps) {
                       Remember me
                     </Label>
                   </div>
-                  <Button variant="link" className="px-0 text-sm text-blue-600 hover:text-blue-500">
+                  <Button
+                    variant="link"
+                    className="px-0 text-sm text-blue-600 hover:text-blue-500"
+                  >
                     Forgot password?
                   </Button>
                 </div>
               )}
 
-              <Button type="submit" className="w-full h-11 bg-green-600 hover:bg-green-700" disabled={isLoading}>
+              <Button
+                type="submit"
+                className="w-full h-11 bg-green-600 hover:bg-green-700"
+                disabled={isLoading}
+              >
                 {isLoading ? (
                   <div className="flex items-center">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
@@ -206,11 +255,17 @@ export function AuthForm({ mode, onToggleMode, onAuthSuccess }: AuthFormProps) {
             {!isLogin && (
               <p className="text-xs text-gray-500 text-center leading-relaxed">
                 By creating an account, you agree to our{" "}
-                <Button variant="link" className="px-0 text-xs text-blue-600 hover:text-blue-500">
+                <Button
+                  variant="link"
+                  className="px-0 text-xs text-blue-600 hover:text-blue-500"
+                >
                   Terms of Service
                 </Button>{" "}
                 and{" "}
-                <Button variant="link" className="px-0 text-xs text-blue-600 hover:text-blue-500">
+                <Button
+                  variant="link"
+                  className="px-0 text-xs text-blue-600 hover:text-blue-500"
+                >
                   Privacy Policy
                 </Button>
               </p>
@@ -220,9 +275,11 @@ export function AuthForm({ mode, onToggleMode, onAuthSuccess }: AuthFormProps) {
 
         {/* Additional Info */}
         <div className="mt-8 text-center">
-          <p className="text-sm text-gray-500">Secure authentication powered by industry standards</p>
+          <p className="text-sm text-gray-500">
+            Secure authentication powered by industry standards
+          </p>
         </div>
       </div>
     </div>
-  )
+  );
 }

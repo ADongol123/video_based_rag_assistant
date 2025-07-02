@@ -47,11 +47,22 @@ import uuid
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from template_prompt.classifier import route_and_answer
+from fastapi.middleware.cors import CORSMiddleware
+
 model = SentenceTransformer("sentence-transformers/all-mpnet-base-v2")  # or any other model you prefer
 
 scraped_collection = db["scraped_Data"]
 course_collection = db["course_collection"]
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Frontend origin
+    allow_credentials=True,
+    allow_methods=["*"],                 
+    allow_headers=["*"],
+)
+
 @app.on_event("startup")
 def setup_qdrant_indexes():
     try:
@@ -91,8 +102,8 @@ def root():
 app.include_router(auth_routes.app)
 
 @app.on_event("startup")
-async def startup_event():
-    await ensure_indexes()
+def startup_event():
+    ensure_indexes()
 # -------------------------------------------------------------------------------
 class QueryInput(BaseModel):
     question: str

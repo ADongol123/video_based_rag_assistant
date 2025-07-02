@@ -1,18 +1,18 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   PlusIcon,
   MessageSquareIcon,
@@ -22,39 +22,42 @@ import {
   BotIcon,
   LogOutIcon,
   SettingsIcon,
-} from "lucide-react"
-import { AuthForm } from "@/components/auth-form"
-import { AdminDashboard } from "@/components/admin-dashboard"
+} from "lucide-react";
+import { AuthForm } from "@/components/auth-form";
+import { AdminDashboard } from "@/components/admin-dashboard";
+import { SuperAdminDashboard } from "@/components/super-admin-dashboard";
 
 interface Message {
-  id: string
-  content: string
-  role: "user" | "assistant"
-  timestamp: Date
+  id: string;
+  content: string;
+  role: "user" | "assistant";
+  timestamp: Date;
 }
 
 interface Chat {
-  id: string
-  title: string
-  messages: Message[]
-  lastMessage: Date
+  id: string;
+  title: string;
+  messages: Message[];
+  lastMessage: Date;
 }
 
 interface User {
-  name: string
-  email: string
-  avatar?: string
+  name: string;
+  email: string;
+  avatar?: string;
 }
 
 export default function ChatGPTInterface() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [authMode, setAuthMode] = useState<"login" | "register">("login")
-  const [user, setUser] = useState<User | null>(null)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [currentChatId, setCurrentChatId] = useState("1")
-  const [inputValue, setInputValue] = useState("")
-  const [userType, setUserType] = useState<"user" | "admin">("user")
-
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
+  const [user, setUser] = useState<User | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [currentChatId, setCurrentChatId] = useState("1");
+  const [inputValue, setInputValue] = useState("");
+  const [userType, setUserType] = useState<"user" | "admin" | "superadmin">(
+    "user"
+  );
+  console.log(userType, "This is the user type");
   // Mock data for demonstration
   const [chats, setChats] = useState<Chat[]>([
     {
@@ -109,85 +112,106 @@ export default function ChatGPTInterface() {
         },
       ],
     },
-  ])
+  ]);
 
-  const currentChat = chats.find((chat) => chat.id === currentChatId)
+  const currentChat = chats.find((chat) => chat.id === currentChatId);
 
-  const handleAuthSuccess = (type: "user" | "admin") => {
-    setIsAuthenticated(true)
-    setUserType(type)
+  const handleAuthSuccess = (type: "user" | "admin" | "superadmin") => {
+    setIsAuthenticated(true);
+    setUserType(type);
     setUser({
-      name: type === "admin" ? "Dr. Sarah Johnson" : authMode === "register" ? "New User" : "John Doe",
+      name:
+        type === "superadmin"
+          ? "System Administrator"
+          : type === "admin"
+          ? "Dr. Sarah Johnson"
+          : authMode === "register"
+          ? "New User"
+          : "John Doe",
       email:
-        type === "admin"
+        type === "superadmin"
+          ? "admin@chatai.com"
+          : type === "admin"
           ? "sarah.johnson@school.edu"
           : authMode === "register"
-            ? "newuser@example.com"
-            : "john@example.com",
-    })
-  }
+          ? "newuser@example.com"
+          : "john@example.com",
+    });
+  };
 
   const handleLogout = () => {
-    setIsAuthenticated(false)
-    setUser(null)
-    setUserType("user")
-  }
+    setIsAuthenticated(false);
+    setUser(null);
+    setUserType("user");
+  };
 
   const handleSendMessage = () => {
-    if (!inputValue.trim()) return
+    if (!inputValue.trim()) return;
 
     const newMessage: Message = {
       id: Date.now().toString(),
       content: inputValue,
       role: "user",
       timestamp: new Date(),
-    }
+    };
 
     setChats((prevChats) =>
       prevChats.map((chat) =>
         chat.id === currentChatId
-          ? { ...chat, messages: [...chat.messages, newMessage], lastMessage: new Date() }
-          : chat,
-      ),
-    )
+          ? {
+              ...chat,
+              messages: [...chat.messages, newMessage],
+              lastMessage: new Date(),
+            }
+          : chat
+      )
+    );
 
-    setInputValue("")
-  }
+    setInputValue("");
+  };
 
   const handleNewChat = () => {
-    const newChatId = Date.now().toString()
+    const newChatId = Date.now().toString();
     const newChat: Chat = {
       id: newChatId,
       title: "New Chat",
       messages: [],
       lastMessage: new Date(),
-    }
+    };
 
-    setChats((prevChats) => [newChat, ...prevChats])
-    setCurrentChatId(newChatId)
-  }
+    setChats((prevChats) => [newChat, ...prevChats]);
+    setCurrentChatId(newChatId);
+  };
 
   // Show authentication form if not authenticated
   if (!isAuthenticated) {
     return (
       <AuthForm
         mode={authMode}
-        onToggleMode={() => setAuthMode(authMode === "login" ? "register" : "login")}
+        onToggleMode={() =>
+          setAuthMode(authMode === "login" ? "register" : "login")
+        }
         onAuthSuccess={handleAuthSuccess}
       />
-    )
+    );
   }
+  if (isAuthenticated && userType === "superadmin" && user) {
+    return <SuperAdminDashboard user={user} onLogout={handleLogout} />
+  }
+
 
   // Show admin dashboard for teachers
   if (isAuthenticated && userType === "admin" && user) {
-    return <AdminDashboard user={user} onLogout={handleLogout} />
+    return <AdminDashboard user={user} onLogout={handleLogout} />;
   }
 
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
       <div
-        className={`${sidebarOpen ? "w-64" : "w-0"} transition-all duration-300 bg-gray-900 text-white flex flex-col overflow-hidden`}
+        className={`${
+          sidebarOpen ? "w-64" : "w-0"
+        } transition-all duration-300 bg-gray-900 text-white flex flex-col overflow-hidden`}
       >
         <div className="p-4">
           <Button
@@ -226,7 +250,10 @@ export default function ChatGPTInterface() {
         <div className="p-4 border-t border-gray-700">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="w-full justify-start p-2 h-auto text-white hover:bg-gray-800">
+              <Button
+                variant="ghost"
+                className="w-full justify-start p-2 h-auto text-white hover:bg-gray-800"
+              >
                 <Avatar className="w-8 h-8 mr-3">
                   <AvatarFallback className="bg-green-600 text-white text-sm">
                     {user?.name?.charAt(0) || "U"}
@@ -234,7 +261,9 @@ export default function ChatGPTInterface() {
                 </Avatar>
                 <div className="flex-1 text-left">
                   <p className="text-sm font-medium truncate">{user?.name}</p>
-                  <p className="text-xs text-gray-400 truncate">{user?.email}</p>
+                  <p className="text-xs text-gray-400 truncate">
+                    {user?.email}
+                  </p>
                 </div>
               </Button>
             </DropdownMenuTrigger>
@@ -258,10 +287,17 @@ export default function ChatGPTInterface() {
         {/* Header */}
         <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between">
           <div className="flex items-center">
-            <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(!sidebarOpen)} className="mr-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="mr-4"
+            >
               <MenuIcon className="w-5 h-5" />
             </Button>
-            <h1 className="text-xl font-semibold text-gray-800">{currentChat?.title || "New Chat"}</h1>
+            <h1 className="text-xl font-semibold text-gray-800">
+              {currentChat?.title || "New Chat"}
+            </h1>
           </div>
 
           <div className="flex items-center space-x-2">
@@ -282,8 +318,12 @@ export default function ChatGPTInterface() {
                 <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
                   <BotIcon className="w-8 h-8 text-gray-500" />
                 </div>
-                <h2 className="text-2xl font-semibold text-gray-800 mb-2">How can I help you today?</h2>
-                <p className="text-gray-600">Start a conversation by typing a message below.</p>
+                <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+                  How can I help you today?
+                </h2>
+                <p className="text-gray-600">
+                  Start a conversation by typing a message below.
+                </p>
               </div>
             ) : (
               currentChat?.messages.map((message) => (
@@ -301,7 +341,9 @@ export default function ChatGPTInterface() {
                   </div>
                   <div className="flex-1">
                     <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-                      <p className="text-gray-800 whitespace-pre-wrap">{message.content}</p>
+                      <p className="text-gray-800 whitespace-pre-wrap">
+                        {message.content}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -336,5 +378,5 @@ export default function ChatGPTInterface() {
         </div>
       </div>
     </div>
-  )
+  );
 }
